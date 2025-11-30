@@ -1,0 +1,1142 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Simulación de cohete de botella (Caso 2)</title>
+
+<script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --azul-oscuro:#020617;
+    --azul:#1d4ed8;
+    --azul-claro:#e0f2fe;
+    --gris-borde:#d1d5db;
+    --naranja:#f97316;
+    --verde:#16a34a;
+    --rojo:#ef4444;
+    --morado:#a855f7;
+  }
+
+  *{box-sizing:border-box;}
+
+  body{
+    font-family:'Poppins',sans-serif;
+    margin:0;
+    padding:0;
+    background:#020617;
+    color:#0f172a;
+  }
+
+  #contenedor{
+    max-width:1200px;
+    margin:20px auto 30px auto;
+    background:#ffffff;
+    padding:18px 20px 26px 20px;
+    border-radius:18px;
+    border:1px solid #020617;
+    box-shadow:0 18px 38px rgba(15,23,42,0.7);
+  }
+
+  #top-bar{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    flex-wrap:wrap;
+    gap:10px;
+    margin-bottom:4px;
+  }
+
+  #badge{
+    padding:6px 12px;
+    border-radius:999px;
+    background:rgba(37,99,235,0.08);
+    color:#1d4ed8;
+    font-size:12px;
+    font-weight:500;
+  }
+
+  .btn{
+    background:var(--naranja);
+    color:white;
+    border:none;
+    padding:8px 18px;
+    border-radius:999px;
+    font-size:13px;
+    font-weight:600;
+    cursor:pointer;
+    box-shadow:0 7px 16px rgba(249,115,22,0.55);
+    letter-spacing:0.03em;
+    transition:transform 0.08s ease,box-shadow 0.08s ease,background 0.15s;
+  }
+  .btn:hover{
+    transform:translateY(-1px);
+    box-shadow:0 12px 24px rgba(15,23,42,0.65);
+    background:#ea580c;
+  }
+
+  h1{
+    text-align:center;
+    margin:4px 0 0 0;
+    font-weight:800;
+    color:var(--naranja);
+    font-size:27px;
+    letter-spacing:0.03em;
+    text-shadow:0 2px 6px rgba(15,23,42,0.35);
+  }
+  p.subtitulo{
+    text-align:center;
+    margin-top:6px;
+    margin-bottom:10px;
+    color:#4b5563;
+    font-size:13px;
+  }
+  p.subtitulo span{
+    font-weight:600;
+  }
+
+  /* Escena */
+  #sceneWrapper{
+    position:relative;
+    width:100%;
+    height:55vh;
+    min-height:380px;
+    max-height:520px;
+    border-radius:14px;
+    border:1px solid var(--gris-borde);
+    overflow:hidden;
+  }
+  #scene3d{
+    position:relative;
+    width:100%;
+    height:100%;
+    background:
+      linear-gradient(to top,rgba(15,23,42,0.7),rgba(15,23,42,0.10)),
+      url("fondo_patio_universidad.jpg") center/cover no-repeat;
+  }
+  #hud{
+    position:absolute;
+    left:10px;
+    top:10px;
+    max-width:380px;
+    padding:8px 11px;
+    border-radius:10px;
+    background:rgba(15,23,42,0.88);
+    color:#e5e7eb;
+    font-size:11px;
+    line-height:1.35;
+    box-shadow:0 8px 18px rgba(15,23,42,0.6);
+    border:1px solid rgba(148,163,184,0.4);
+  }
+  #hud b{color:#facc15;}
+  #hud .tag{
+    display:inline-block;
+    padding:1px 6px;
+    border-radius:999px;
+    font-size:10px;
+    margin-right:4px;
+  }
+  .tag-empuje{
+    background:rgba(22,163,74,0.18);
+    color:#4ade80;
+  }
+  .tag-vuelo{
+    background:rgba(59,130,246,0.18);
+    color:#93c5fd;
+  }
+
+  /* fila gráfica + texto */
+  #infoRow{
+    display:flex;
+    flex-wrap:wrap;
+    gap:12px;
+    margin-top:14px;
+  }
+
+  canvas#energyCanvas{
+    flex:1 1 580px;
+    background:#ffffff;
+    border-radius:12px;
+    border:1px solid var(--gris-borde);
+  }
+
+  #datos{
+    flex:1 1 320px;
+    font-family:"Consolas","Fira Code",monospace;
+    font-size:12px;
+    background:var(--azul-claro);
+    border:1px solid var(--gris-borde);
+    padding:10px 12px;
+    white-space:pre;
+    overflow:auto;
+    border-radius:10px;
+    color:#0f172a;
+    max-height:260px;
+  }
+
+  h2{
+    margin-top:18px;
+    margin-bottom:10px;
+    font-size:20px;
+    color:var(--azul-oscuro);
+  }
+
+  /* DCL */
+  #dclRow{
+    display:flex;
+    flex-wrap:wrap;
+    gap:12px;
+  }
+  .dcl-card{
+    flex:1 1 360px;
+    border-radius:14px;
+    border:1px solid var(--gris-borde);
+    padding:14px 18px;
+    background:radial-gradient(circle at top left,#eff6ff,#f9fafb);
+  }
+  .dcl-title{
+    font-weight:700;
+    color:var(--azul);
+    margin-bottom:4px;
+    font-size:15px;
+  }
+  .dcl-sub{
+    font-size:12px;
+    color:#6b7280;
+    margin-bottom:8px;
+  }
+
+  .dcl-diag{
+    position:relative;
+    height:170px;
+    border-radius:10px;
+    background:linear-gradient(to top,#e5e7eb,#f9fafb);
+    overflow:hidden;
+    border:1px solid #cbd5f5;
+  }
+  .dcl-ground{
+    position:absolute;
+    left:0;right:0;bottom:24px;
+    height:6px;
+    background:linear-gradient(to right,#16a34a,#4ade80);
+    box-shadow:0 -2px 6px rgba(15,23,42,0.35) inset;
+  }
+  .dcl-persona{
+    position:absolute;
+    bottom:24px;
+    left:16px;
+    width:14px;
+    height:34px;
+    border-radius:8px;
+    background:#1d4ed8;
+  }
+  .dcl-persona::before{
+    content:"";
+    position:absolute;
+    left:2px;
+    top:-9px;
+    width:10px;
+    height:10px;
+    border-radius:999px;
+    background:#facc15;
+  }
+
+  .dcl-cohete{
+    position:absolute;
+    width:48px;
+    height:64px;
+    background:linear-gradient(to top,#e5e7eb,#ffffff);
+    border-radius:8px;
+    border:2px solid #9ca3af;
+    left:50%;
+    transform:translateX(-50%);
+    bottom:30px;
+    box-shadow:0 4px 10px rgba(15,23,42,0.35);
+  }
+  .dcl-cohete:before{
+    content:"";
+    position:absolute;
+    left:8px;
+    right:8px;
+    top:-16px;
+    border-left:12px solid transparent;
+    border-right:12px solid transparent;
+    border-bottom:18px solid #f97316;
+  }
+  .dcl-cohete:after{
+    content:"";
+    position:absolute;
+    left:6px;
+    right:6px;
+    bottom:-6px;
+    height:8px;
+    background:linear-gradient(to right,#1d4ed8,#3b82f6);
+    border-radius:999px;
+  }
+
+  /* flechas del DCL */
+  .arrow{
+    position:absolute;
+    width:2px;
+    background:transparent;
+  }
+  .arrow::after{
+    content:"";
+    position:absolute;
+    left:50%;
+    transform:translateX(-50%);
+  }
+  .arrow-label{
+    position:absolute;
+    font-size:11px;
+    font-weight:600;
+    text-shadow:0 1px 2px rgba(255,255,255,0.7);
+  }
+
+  /* Peso (roja, hacia abajo) */
+  .arrow-peso{
+    left:50%;
+    transform:translateX(-50%);
+    top:32px;
+    height:76px;
+    background:var(--rojo);
+    box-shadow:0 0 8px rgba(239,68,68,0.8);
+  }
+  .arrow-peso::after{
+    bottom:-7px;
+    border-left:5px solid transparent;
+    border-right:5px solid transparent;
+    border-top:9px solid var(--rojo);
+  }
+  .label-peso{
+    top:110px;
+    left:50%;
+    transform:translateX(-50%);
+    color:var(--rojo);
+  }
+
+  /* Empuje (verde, inclinado) */
+  .arrow-empuje{
+    height:72px;
+    width:3px;
+    background:var(--verde);
+    left:52%;
+    top:52px;
+    transform-origin:bottom center;
+    transform:translateX(-50%) rotate(-35deg);
+    box-shadow:0 0 8px rgba(34,197,94,0.9);
+  }
+  .arrow-empuje::after{
+    top:-7px;
+    border-left:6px solid transparent;
+    border-right:6px solid transparent;
+    border-bottom:9px solid var(--verde);
+  }
+  .label-empuje{
+    top:40px;
+    left:67%;
+    color:var(--verde);
+  }
+
+  /* Normal (gris, hacia arriba) */
+  .arrow-normal{
+    left:50%;
+    transform:translateX(-50%);
+    bottom:24px;
+    height:28px;
+    background:#6b7280;
+  }
+  .arrow-normal::after{
+    top:-7px;
+    border-left:5px solid transparent;
+    border-right:5px solid transparent;
+    border-bottom:9px solid #6b7280;
+  }
+  .label-normal{
+    bottom:54px;
+    left:50%;
+    transform:translateX(-50%);
+    color:#6b7280;
+  }
+
+  @media (max-width:800px){
+    #sceneWrapper{height:320px;}
+  }
+</style>
+</head>
+<body>
+<div id="contenedor">
+  <div id="top-bar">
+    <div id="badge">Caso 2 · Cohete de botella (600 mL)</div>
+    <button id="btnRestart" class="btn">⟳ Reiniciar simulación</button>
+  </div>
+
+  <h1>Simulación de cohete de botella (Empuje + vuelo libre)</h1>
+  <p class="subtitulo">
+    Arriba: cohete tipo botella, chorro de agua, fuerzas y trayectoria · Abajo: energías <span>(Ec, Ep, Et)</span>, velocidad y altura.<br>
+    <span style="color:#f97316;font-weight:700;">Naranja</span> = fase de empuje (MRUV con a ≈ 60 m/s²) ·
+    <span style="color:#1d4ed8;font-weight:700;">Azul</span> = vuelo libre (MRUV con a<sub>y</sub> = −g).<br>
+    <span style="color:#16a34a;font-weight:700;">Verde</span> = F<sub>emp</sub> ·
+    <span style="color:#ef4444;font-weight:700;">Rojo</span> = Peso P ·
+    <span style="color:#6b7280;font-weight:700;">Gris</span> = Normal N.
+  </p>
+
+  <div id="sceneWrapper">
+    <div id="scene3d"></div>
+    <div id="hud"></div>
+  </div>
+
+  <div id="infoRow">
+    <canvas id="energyCanvas" width="640" height="260"></canvas>
+    <div id="datos"></div>
+  </div>
+
+  <h2>Diagramas de Cuerpo Libre (DCL)</h2>
+  <div id="dclRow">
+    <!-- EMPUJE -->
+    <div class="dcl-card">
+      <div class="dcl-title">DCL – Fase de empuje</div>
+      <div class="dcl-sub">Mientras sale el agua, el cohete se acelera por la fuerza de empuje del chorro.</div>
+      <div class="dcl-diag">
+        <div class="dcl-ground"></div>
+        <div class="dcl-persona"></div>
+        <div class="dcl-cohete"></div>
+        <div class="arrow arrow-peso"></div>
+        <div class="arrow-label label-peso">P = m·g</div>
+        <div class="arrow arrow-empuje"></div>
+        <div class="arrow-label label-empuje">F<sub>emp</sub></div>
+        <div class="arrow arrow-normal"></div>
+        <div class="arrow-label label-normal">N</div>
+      </div>
+      <ul style="font-size:12px;color:#4b5563;margin-top:8px;padding-left:18px;">
+        <li><b style="color:#16a34a;">F<sub>emp</sub></b>: fuerza de empuje por el chorro de agua (a = a_emp ≈ 60 m/s²).</li>
+        <li><b style="color:#ef4444;">P</b>: peso del cohete (vertical hacia abajo).</li>
+        <li><b style="color:#6b7280;">N</b>: fuerza normal del riel/piso, solo al inicio (antes de despegar).</li>
+      </ul>
+    </div>
+
+    <!-- VUELO LIBRE -->
+    <div class="dcl-card">
+      <div class="dcl-title">DCL – Fase de vuelo libre</div>
+      <div class="dcl-sub">Cuando se acaba el agua, el cohete se comporta como proyectil: solo actúa la gravedad.</div>
+      <div class="dcl-diag">
+        <div class="dcl-ground"></div>
+        <div class="dcl-persona" style="left:auto;right:18px;background:#f97316;"></div>
+        <div class="dcl-cohete" style="bottom:76px;"></div>
+        <div class="arrow arrow-peso" style="top:16px;height:92px;"></div>
+        <div class="arrow-label label-peso" style="top:112px;">P = m·g</div>
+      </div>
+      <ul style="font-size:12px;color:#4b5563;margin-top:8px;padding-left:18px;">
+        <li>La fuerza de empuje desaparece (no hay chorro de agua).</li>
+        <li>Solo actúa el <b style="color:#ef4444;">peso</b>, por eso el movimiento es MRUV con a<sub>y</sub> = −g.</li>
+        <li>Es el modelo clásico de tiro parabólico.</li>
+      </ul>
+    </div>
+  </div>
+
+  <audio id="sonido" src="cohete.mp3" preload="auto"></audio>
+</div>
+
+<script>
+(function(){
+  // ==========================
+  // PARÁMETROS FÍSICOS
+  // ==========================
+  const g       = 9.81;
+  const m       = 0.30;
+  const VbML    = 600;
+  const VaguaML = 300;
+  const angDeg  = 55;
+  const angRad  = angDeg * Math.PI/180;
+  const tEmp    = 0.20;
+  const aEmp    = 60.0;
+
+  const axEmp = aEmp * Math.cos(angRad);
+  const ayEmp = aEmp * Math.sin(angRad);
+
+  // ==========================
+  // SIMULACIÓN (2 FASES)
+  // ==========================
+  let tArr=[],xArr=[],yArr=[],vxArr=[],vyArr=[];
+  let EcArr=[],EpArr=[],EtArr=[];
+  let tiempoVuelo,alturaMax,alcance,v0,v0x,v0y;
+  let idxEmpuje,idxMaxAlt,idxFinal;
+  let maxEt,maxVel,maxAlt,vArr;
+
+  function generarDatos(){
+    const dt=0.01;
+    tArr=[];xArr=[];yArr=[];vxArr=[];vyArr=[];
+    EcArr=[];EpArr=[];EtArr=[];
+    let t=0,maxY=0,maxX=0;
+
+    while(t<=tEmp+1e-6){
+      const vx=axEmp*t;
+      const vy=ayEmp*t;
+      const x=0.5*axEmp*t*t;
+      const y=0.5*ayEmp*t*t;
+      const v=Math.sqrt(vx*vx+vy*vy);
+      const Ec=0.5*m*v*v;
+      const Ep=m*g*y;
+      const Et=Ec+Ep;
+
+      tArr.push(t);xArr.push(x);yArr.push(y);
+      vxArr.push(vx);vyArr.push(vy);
+      EcArr.push(Ec);EpArr.push(Ep);EtArr.push(Et);
+
+      if(y>maxY)maxY=y;
+      if(x>maxX)maxX=x;
+      t+=dt;
+    }
+    idxEmpuje=tArr.length-1;
+    const xEmpFin=xArr[idxEmpuje];
+    const yEmpFin=yArr[idxEmpuje];
+    v0x=vxArr[idxEmpuje];
+    v0y=vyArr[idxEmpuje];
+    v0=Math.sqrt(v0x*v0x+v0y*v0y);
+
+    while(true){
+      t+=dt;
+      const tb=t-tEmp;
+      const xB=xEmpFin+v0x*tb;
+      const yB=yEmpFin+v0y*tb-0.5*g*tb*tb;
+      if(yB<0 && tb>0)break;
+
+      const vxB=v0x;
+      const vyB=v0y-g*tb;
+      const vB=Math.sqrt(vxB*vxB+vyB*vyB);
+      const EcB=0.5*m*vB*vB;
+      const EpB=m*g*Math.max(yB,0);
+      const EtB=EcB+EpB;
+
+      tArr.push(t);xArr.push(xB);yArr.push(Math.max(yB,0));
+      vxArr.push(vxB);vyArr.push(vyB);
+      EcArr.push(EcB);EpArr.push(EpB);EtArr.push(EtB);
+
+      if(yB>maxY)maxY=yB;
+      if(xB>maxX)maxX=xB;
+    }
+
+    tiempoVuelo=tArr[tArr.length-1];
+    alturaMax=maxY;
+    alcance=maxX;
+
+    idxFinal=tArr.length-1;
+    idxMaxAlt=0;
+    for(let i=1;i<yArr.length;i++){
+      if(yArr[i]>yArr[idxMaxAlt])idxMaxAlt=i;
+    }
+
+    maxEt=Math.max(...EtArr);
+    vArr=vxArr.map((vx,i)=>Math.sqrt(vx*vx+vyArr[i]*vyArr[i]));
+    maxVel=Math.max(...vArr);
+    maxAlt=alturaMax;
+  }
+  generarDatos();
+
+  // ==========================
+  // PROFUNDIDAD (Z)
+  // ==========================
+  function zFromT(t){
+    return 1.0*Math.sin(0.35*t);
+  }
+
+  // ==========================
+  // ESCENA 3D
+  // ==========================
+  const sceneDiv=document.getElementById("scene3d");
+  const hudDiv  =document.getElementById("hud");
+
+  const scene=new THREE.Scene();
+
+  const camera=new THREE.PerspectiveCamera(
+    48,
+    sceneDiv.clientWidth/sceneDiv.clientHeight,
+    0.1,
+    1000
+  );
+  camera.position.set(14,7,16);
+  camera.lookAt(new THREE.Vector3(8,3,0));
+
+  const renderer=new THREE.WebGLRenderer({antialias:true,alpha:true});
+  renderer.setPixelRatio(window.devicePixelRatio);
+  renderer.setSize(sceneDiv.clientWidth,sceneDiv.clientHeight);
+  renderer.setClearColor(0x000000,0);
+  renderer.shadowMap.enabled=true;
+  renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+  sceneDiv.appendChild(renderer.domElement);
+
+  const hemiLight=new THREE.HemisphereLight(0xffffff,0x86efac,0.85);
+  scene.add(hemiLight);
+  const dirLight=new THREE.DirectionalLight(0xffffff,0.95);
+  dirLight.position.set(10,18,10);
+  dirLight.castShadow=true;
+  dirLight.shadow.mapSize.set(2048,2048);
+  scene.add(dirLight);
+
+  const groundGeo=new THREE.PlaneGeometry(40,12);
+  const groundMat=new THREE.MeshPhongMaterial({color:0x15803d});
+  const ground=new THREE.Mesh(groundGeo,groundMat);
+  ground.rotation.x=-Math.PI/2;
+  ground.position.set(10,-0.02,0);
+  ground.receiveShadow=true;
+  scene.add(ground);
+
+  const grid=new THREE.GridHelper(40,20,0xffffff,0xffffff);
+  grid.position.y=-0.01;
+  grid.material.opacity=0.28;
+  grid.material.transparent=true;
+  scene.add(grid);
+
+  const ptsEmp=[],ptsBal=[];
+  for(let i=0;i<tArr.length;i++){
+    const z = zFromT(tArr[i]);
+    const p=new THREE.Vector3(xArr[i],yArr[i],z);
+    if(tArr[i]<=tEmp+1e-6) ptsEmp.push(p);
+    else                  ptsBal.push(p);
+  }
+  const empLine=new THREE.Line(
+    new THREE.BufferGeometry().setFromPoints(ptsEmp),
+    new THREE.LineBasicMaterial({color:0xf97316,linewidth:3})
+  );
+  const balLine=new THREE.Line(
+    new THREE.BufferGeometry().setFromPoints(ptsBal),
+    new THREE.LineBasicMaterial({color:0x1d4ed8,linewidth:3})
+  );
+  scene.add(empLine);scene.add(balLine);
+
+  // Cohete
+  const rocket=new THREE.Group();
+
+  const bottleGeo=new THREE.CylinderGeometry(0.32,0.32,1.8,28,1,true);
+  const bottleMat=new THREE.MeshPhongMaterial({
+    color:0xffffff,
+    transparent:true,
+    opacity:0.22,
+    side:THREE.DoubleSide,
+    shininess:80
+  });
+  const bottle=new THREE.Mesh(bottleGeo,bottleMat);
+  bottle.position.y=0.9;
+  bottle.castShadow=true;
+  rocket.add(bottle);
+
+  const waterGeo=new THREE.CylinderGeometry(0.29,0.29,1.3,28);
+  const waterMat=new THREE.MeshPhongMaterial({
+    color:0x3b82f6,
+    transparent:true,
+    opacity:0.9,
+    shininess:100
+  });
+  const water=new THREE.Mesh(waterGeo,waterMat);
+  water.position.y=0.35;
+  water.castShadow=true;
+  rocket.add(water);
+
+  const neck=new THREE.Mesh(
+    new THREE.CylinderGeometry(0.17,0.23,0.28,20),
+    new THREE.MeshPhongMaterial({color:0xe5e7eb})
+  );
+  neck.position.y=1.8;
+  neck.castShadow=true;
+  rocket.add(neck);
+
+  const nose=new THREE.Mesh(
+    new THREE.ConeGeometry(0.20,0.45,24),
+    new THREE.MeshPhongMaterial({
+      color:0xf97316,
+      emissive:0xf97316,
+      emissiveIntensity:0.55
+    })
+  );
+  nose.position.y=2.25;
+  nose.castShadow=true;
+  rocket.add(nose);
+
+  const nozzle=new THREE.Mesh(
+    new THREE.CylinderGeometry(0.09,0.12,0.20,20),
+    new THREE.MeshPhongMaterial({color:0x111827})
+  );
+  nozzle.position.y=0.05;
+  nozzle.castShadow=true;
+  rocket.add(nozzle);
+
+  const finGeo=new THREE.BoxGeometry(0.08,0.32,0.30);
+  const finMat=new THREE.MeshPhongMaterial({color:0x1d4ed8});
+  const fin1=new THREE.Mesh(finGeo,finMat);fin1.position.set(0.30,0.30,0.20);fin1.castShadow=true;rocket.add(fin1);
+  const fin2=fin1.clone();fin2.position.z=-0.20;rocket.add(fin2);
+  const fin3=fin1.clone();fin3.rotation.y=Math.PI/2;fin3.position.set(0,0.30,0.32);rocket.add(fin3);
+  const fin4=fin3.clone();fin4.position.z=-0.32;rocket.add(fin4);
+
+  rocket.position.set(0,0.1,0);
+  rocket.castShadow=true;
+  scene.add(rocket);
+
+  // Chorro de agua (fase de empuje)
+  const jet=new THREE.Mesh(
+    new THREE.CylinderGeometry(0.05,0.16,1.4,24),
+    new THREE.MeshPhongMaterial({
+      color:0x38bdf8,
+      transparent:true,
+      opacity:0.97,
+      emissive:0x0ea5e9,
+      emissiveIntensity:0.7
+    })
+  );
+  jet.position.y=-0.8;
+  jet.rotation.x=Math.PI;
+  jet.castShadow=false;
+  rocket.add(jet);
+
+  // Gotas
+  const dropCount=320;
+  const dropGeo=new THREE.BufferGeometry();
+  const dropPos=new Float32Array(dropCount*3);
+  dropGeo.setAttribute("position",new THREE.BufferAttribute(dropPos,3));
+  const drops=new THREE.Points(
+    dropGeo,
+    new THREE.PointsMaterial({
+      color:0x93c5fd,
+      size:0.10,
+      transparent:true,
+      opacity:0.98
+    })
+  );
+  scene.add(drops);
+
+  // Humo
+  const smokePuffs = [];
+  function crearHumo(x,yVis,z){
+    const puff = new THREE.Group();
+    const baseSize = 0.10 + Math.random()*0.05;
+
+    for(let i=0;i<5;i++){
+      const geo = new THREE.SphereGeometry(
+        baseSize*(0.8+Math.random()*0.7),
+        12,12
+      );
+      const mat = new THREE.MeshPhongMaterial({
+        color:0x9ca3af,
+        transparent:true,
+        opacity:0.40
+      });
+      const s = new THREE.Mesh(geo,mat);
+      s.position.set(
+        (Math.random()-0.5)*0.22,
+        (Math.random()*0.18),
+        (Math.random()-0.5)*0.22
+      );
+      puff.add(s);
+    }
+
+    puff.position.set(
+      x-0.35,
+      Math.max(0.0,yVis-0.10),
+      z + (Math.random()-0.5)*0.18
+    );
+    puff.userData.life = 0;
+    scene.add(puff);
+    smokePuffs.push(puff);
+  }
+
+  function actualizarHumo(dtSim){
+    for(let i=smokePuffs.length-1;i>=0;i--){
+      const puff = smokePuffs[i];
+      puff.userData.life += dtSim;
+      const L = puff.userData.life;
+
+      puff.position.y += 0.10*dtSim;
+      const scale = 1 + 1.2*L;
+      puff.scale.set(scale,scale,scale);
+
+      puff.children.forEach(mesh=>{
+        mesh.material.opacity = Math.max(0, 0.40 - 0.35*L);
+      });
+
+      if(L > 1.0){
+        scene.remove(puff);
+        smokePuffs.splice(i,1);
+      }
+    }
+  }
+
+  // Flechas
+  const arrowThrust = new THREE.ArrowHelper(
+    new THREE.Vector3(1,0,0),
+    new THREE.Vector3(0,0,0),
+    1.1,
+    0x22c55e
+  );
+  const arrowWeight = new THREE.ArrowHelper(
+    new THREE.Vector3(0,-1,0),
+    new THREE.Vector3(0,0,0),
+    1.2,
+    0xef4444
+  );
+  const arrowNormal = new THREE.ArrowHelper(
+    new THREE.Vector3(0,1,0),
+    new THREE.Vector3(0,0,0),
+    0.7,
+    0x6b7280
+  );
+  rocket.add(arrowThrust);
+  rocket.add(arrowWeight);
+  rocket.add(arrowNormal);
+
+  // ==========================
+  // CANVAS ENERGÍAS
+  // ==========================
+  const engCanvas=document.getElementById("energyCanvas");
+  const ctxEng=engCanvas.getContext("2d");
+  const eMarginL=60,eMarginR=34,eMarginB=40,eMarginT=24;
+  const eW=engCanvas.width,eH=engCanvas.height;
+
+  function eX(t){return eMarginL+(t/tiempoVuelo)*(eW-eMarginL-eMarginR);}
+  function eY(E){return eH-eMarginB-(E/maxEt)*(eH-eMarginT-eMarginB);}
+
+  const velFactor=maxEt/(maxVel*1.5);
+  const altFactor=maxEt/(maxAlt*1.5);
+
+  function dibujarEjesEnergia(){
+    ctxEng.clearRect(0,0,eW,eH);
+    ctxEng.fillStyle="#f9fafb";
+    ctxEng.fillRect(0,0,eW,eH);
+
+    ctxEng.strokeStyle="#111827";
+    ctxEng.lineWidth=1;
+    ctxEng.beginPath();
+    ctxEng.moveTo(eMarginL,eH-eMarginB);
+    ctxEng.lineTo(eW-eMarginR,eH-eMarginB);
+    ctxEng.stroke();
+    ctxEng.beginPath();
+    ctxEng.moveTo(eMarginL,eH-eMarginB);
+    ctxEng.lineTo(eMarginL,eMarginT);
+    ctxEng.stroke();
+
+    ctxEng.fillStyle="#111827";
+    ctxEng.font="13px Poppins,sans-serif";
+    ctxEng.fillText("Ec / Ep / Et / v / h",eMarginL,eMarginT-6);
+    ctxEng.fillText("t (s)",eW-eMarginR-26,eH-eMarginB+22);
+    ctxEng.fillText("0",eMarginL-10,eH-eMarginB+15);
+    ctxEng.fillText(tiempoVuelo.toFixed(2),eW-eMarginR-42,eH-eMarginB+15);
+    ctxEng.fillText(maxEt.toFixed(1),eMarginL-46,eMarginT+4);
+
+    const baseY=eMarginT+14;
+    function legend(color,text,y){
+      ctxEng.fillStyle=color;
+      ctxEng.fillRect(eW-eMarginR-150,y-8,14,4);
+      ctxEng.fillStyle="#111827";
+      ctxEng.fillText(text,eW-eMarginR-130,y);
+    }
+    ctxEng.font="11px Poppins,sans-serif";
+    legend("#ef4444","Ec",baseY);
+    legend("#3b82f6","Ep",baseY+16);
+    legend("#111827","Et",baseY+32);
+    legend("#16a34a","v (esc.)",baseY+48);
+    legend("#a855f7","h (esc.)",baseY+64);
+
+    const xT=eX(tEmp);
+    ctxEng.strokeStyle="rgba(250,204,21,0.95)";
+    ctxEng.setLineDash([5,4]);
+    ctxEng.beginPath();
+    ctxEng.moveTo(xT,eMarginT);
+    ctxEng.lineTo(xT,eH-eMarginB);
+    ctxEng.stroke();
+    ctxEng.setLineDash([]);
+    ctxEng.fillStyle="#92400e";
+    ctxEng.font="10px Poppins,sans-serif";
+    ctxEng.fillText("Fin empuje",xT-34,eMarginT+12);
+  }
+
+  function dibujarSeries(idxActual){
+    dibujarEjesEnergia();
+    function serie(arr,color,factor){
+      ctxEng.strokeStyle=color;
+      ctxEng.lineWidth=1.4;
+      ctxEng.beginPath();
+      for(let i=0;i<=idxActual;i++){
+        const val=arr[i]*factor;
+        const sx=eX(tArr[i]);
+        const sy=eY(val);
+        if(i===0)ctxEng.moveTo(sx,sy);else ctxEng.lineTo(sx,sy);
+      }
+      ctxEng.stroke();
+    }
+    serie(EcArr,"#ef4444",1.0);
+    serie(EpArr,"#3b82f6",1.0);
+    serie(EtArr,"#111827",1.0);
+    serie(vArr,"#16a34a",velFactor);
+    serie(yArr,"#a855f7",altFactor);
+
+    const xNow=eX(tArr[idxActual]);
+    ctxEng.strokeStyle="rgba(15,23,42,0.40)";
+    ctxEng.setLineDash([4,4]);
+    ctxEng.beginPath();
+    ctxEng.moveTo(xNow,eMarginT);
+    ctxEng.lineTo(xNow,eH-eMarginB);
+    ctxEng.stroke();
+    ctxEng.setLineDash([]);
+
+    const yEt=eY(EtArr[idxActual]);
+    ctxEng.fillStyle="#f97316";
+    ctxEng.beginPath();
+    ctxEng.moveTo(xNow, yEt-7);
+    ctxEng.lineTo(xNow-4,yEt+5);
+    ctxEng.lineTo(xNow+4,yEt+5);
+    ctxEng.closePath();
+    ctxEng.fill();
+  }
+
+  function actualizarGotitas(idx){
+    const baseX=xArr[idx],baseY=yArr[idx];
+    const baseZ=zFromT(tArr[idx]);
+    const arr=drops.geometry.attributes.position.array;
+
+    for(let i=0;i<dropCount;i++){
+      const k=i*3;
+      const s=0.35+Math.random()*1.3;
+      const des=(Math.random()-0.5)*0.45;
+
+      arr[k]   = baseX - s*Math.cos(angRad) + des;
+      arr[k+1] = baseY - s*Math.sin(angRad) - Math.random()*0.20;
+      arr[k+2] = baseZ + (Math.random()-0.5)*0.40;
+    }
+    drops.geometry.attributes.position.needsUpdate=true;
+  }
+
+  // ==========================
+  // ANIMACIÓN
+  // ==========================
+  const audio=document.getElementById("sonido");
+  const btnRestart=document.getElementById("btnRestart");
+  let animId=null,startTime=null;
+  const durAnim=30000;
+  let lastIdx=0;
+
+  function step(timestamp){
+    if(!startTime)startTime=timestamp;
+    let alpha=(timestamp-startTime)/durAnim;
+    if(alpha>1)alpha=1;
+
+    const idxFloat=alpha*(tArr.length-1);
+    const idx=Math.floor(idxFloat);
+    const tNow=tArr[idx];
+    const x=xArr[idx],y=yArr[idx];
+    const z=zFromT(tNow);
+    const vx=vxArr[idx],vy=vyArr[idx];
+    const vInst=Math.sqrt(vx*vx+vy*vy);
+    const enEmpuje=(tNow<=tEmp+1e-6);
+
+    const dtSim = Math.max(0, tArr[idx]-tArr[lastIdx]);
+    lastIdx=idx;
+
+    // Altura visual (para que no atraviese el suelo)
+    const yVis = Math.max(0,y) + 0.10;
+
+    rocket.position.set(x,yVis,z);
+
+    // Orientación: durante el vuelo se orienta según v; cerca del suelo se "endereza"
+    let visAngle;
+    if(!enEmpuje && y < 0.25){
+      visAngle = 0; // paralelo al suelo para un aterrizaje suave
+    }else{
+      visAngle = Math.atan2(vy,vx);
+    }
+    rocket.rotation.z = -visAngle+Math.PI/2;
+
+    // Agua interior
+    if(enEmpuje){
+      const frac=1-tNow/tEmp;
+      const scaleY=Math.max(0.10,frac);
+      water.scale.y=scaleY;
+      water.position.y=0.10+0.65*scaleY;
+    }else{
+      water.scale.y=0.10;
+      water.position.y=0.12;
+    }
+
+    // Chorro, gotas y humo: solo en empuje (0 ≤ t ≤ 0.20 s)
+    if(enEmpuje){
+      jet.visible=true;
+      drops.visible=true;
+      actualizarGotitas(idx);
+
+      if(tNow<0.18 && Math.random()<0.75){
+        crearHumo(x,yVis,z);
+      }
+    }else{
+      jet.visible=false;
+      drops.visible=false;
+    }
+
+    actualizarHumo(dtSim);
+
+    // Fuerzas
+    arrowWeight.position.set(0,0,0);
+    arrowWeight.setDirection(new THREE.Vector3(0,-1,0));
+    arrowWeight.setLength(1.2);
+
+    if(enEmpuje){
+      const dirThrust=new THREE.Vector3(vx,vy,0).normalize();
+      arrowThrust.visible=true;
+      arrowThrust.position.set(0,0,0);
+      arrowThrust.setDirection(dirThrust);
+      arrowThrust.setLength(1.1);
+
+      if(tNow<0.03){
+        arrowNormal.visible=true;
+        arrowNormal.position.set(0,-0.9,0);
+        arrowNormal.setDirection(new THREE.Vector3(0,1,0));
+        arrowNormal.setLength(0.7);
+      }else{
+        arrowNormal.visible=false;
+      }
+    }else{
+      arrowThrust.visible=false;
+      arrowNormal.visible=false;
+    }
+
+    // HUD
+    const faseTxt = enEmpuje
+      ? `<span class="tag tag-empuje">Empuje (0 ≤ t ≤ 0.20 s)</span> `+
+        `<b>MRUV con a = a_emp = 60 m/s²</b>. Agua expulsada hacia atrás `+
+        `→ fuerza de empuje F<sub>emp</sub>. Actúan `+
+        `<span style="color:#16a34a;">F<sub>emp</sub></span>, `+
+        `<span style="color:#ef4444;">P</span> y al inicio `+
+        `<span style="color:#6b7280;">N</span>.`
+      : `<span class="tag tag-vuelo">Vuelo libre (t > 0.20 s)</span> `+
+        `<b>Solo actúa el peso P</b>: a<sub>y</sub> = −g, v<sub>x</sub> constante. `+
+        `El cohete se mueve como un proyectil (tiro parabólico).`;
+
+    hudDiv.innerHTML =
+      `t ≈ ${tNow.toFixed(2)} s<br>`+
+      `${faseTxt}<br>`+
+      `altura y ≈ <b>${y.toFixed(2)}</b> m · alcance x ≈ <b>${x.toFixed(2)}</b> m<br>`+
+      `rapidez |v| ≈ <b>${vInst.toFixed(2)}</b> m/s`;
+
+    dibujarSeries(idx);
+
+    // Cámara: órbita suave para ver todas las dimensiones
+    const camBaseAng = 0.6 + 0.5*Math.sin(alpha*Math.PI);
+    const rad    = 16;
+    const jitter = 0.12*Math.sin(timestamp*0.002);
+    camera.position.set(
+      rad*Math.cos(camBaseAng) + jitter,
+      7 + 1.5*Math.sin(alpha*Math.PI*2) + jitter*0.4,
+      rad*Math.sin(camBaseAng) + jitter*0.6
+    );
+    camera.lookAt(new THREE.Vector3(8,3,0.8*Math.sin(alpha*Math.PI)));
+
+    renderer.render(scene,camera);
+
+    if(alpha<1){
+      animId=requestAnimationFrame(step);
+    }else{
+      animId=null;
+    }
+  }
+
+  function iniciarAnimacion(){
+    if(audio){
+      audio.currentTime=0;
+      audio.play().catch(()=>{});
+    }
+    if(animId!==null)cancelAnimationFrame(animId);
+    startTime=null;
+    lastIdx=0;
+    dibujarEjesEnergia();
+    animId=requestAnimationFrame(step);
+  }
+
+  // ==========================
+  // TEXTO EXPLICATIVO
+  // ==========================
+  function energia(idx){
+    const v=Math.sqrt(vxArr[idx]*vxArr[idx]+vyArr[idx]*vyArr[idx]);
+    const h=yArr[idx];
+    const Ec=0.5*m*v*v;
+    const Ep=m*g*h;
+    const Et=Ec+Ep;
+    return {v,h,Ec,Ep,Et,t:tArr[idx],x:xArr[idx]};
+  }
+
+  const vTeo=aEmp*tEmp;
+  const v0xTe=vTeo*Math.cos(angRad);
+  const v0yTe=vTeo*Math.sin(angRad);
+  const yEmpTe=0.5*ayEmp*tEmp*tEmp;
+  const xEmpTe=0.5*axEmp*tEmp*tEmp;
+
+  const A=-0.5*g,B=v0yTe,C=yEmpTe;
+  const disc=Math.sqrt(B*B-4*A*C);
+  const tbTotal=(-B-disc)/(2*A);
+  const tTotalTe=tEmp+tbTotal;
+  const hMaxTe=yEmpTe+(v0yTe*v0yTe)/(2*g);
+  const alcanceTe=xEmpTe+v0xTe*tbTotal;
+
+  const eEmp=energia(idxEmpuje);
+  const eCima=energia(idxMaxAlt);
+  const eSuelo=energia(idxFinal);
+
+  const datosDiv=document.getElementById("datos");
+  let txt="";
+  txt+="DATOS DEL PROBLEMA (Cohete de botella)\n";
+  txt+="--------------------------------------\n";
+  txt+=`Botella:                 ${VbML} mL\n`;
+  txt+=`Volumen de agua:         ${VaguaML} mL\n`;
+  txt+=`Masa total m:            ${m.toFixed(2)} kg\n`;
+  txt+=`Ángulo de lanzamiento:   ${angDeg.toFixed(1)} °\n`;
+  txt+=`Tiempo de empuje t_emp:  ${tEmp.toFixed(2)} s\n`;
+  txt+=`Aceleración a_emp:       ${aEmp.toFixed(1)} m/s²\n\n`;
+
+  txt+="1) Velocidad al final del empuje (MRUV)\n";
+  txt+="   v = a · t\n";
+  txt+=`   v = ${aEmp.toFixed(1)} · ${tEmp.toFixed(2)} ≈ ${vTeo.toFixed(2)} m/s\n`;
+  txt+=`   v0x = v cos θ ≈ ${v0xTe.toFixed(2)} m/s\n`;
+  txt+=`   v0y = v sin θ ≈ ${v0yTe.toFixed(2)} m/s\n\n`;
+
+  txt+="2) Resultados teóricos del vuelo libre (proyectil)\n";
+  txt+=`   Altura máxima teórica h_max ≈ ${hMaxTe.toFixed(2)} m\n`;
+  txt+=`   Tiempo total teórico        ≈ ${tTotalTe.toFixed(2)} s\n`;
+  txt+=`   Alcance teórico             ≈ ${alcanceTe.toFixed(2)} m\n\n`;
+
+  txt+="3) Resultados de la simulación numérica\n";
+  txt+=`   Tiempo total de vuelo num.  ≈ ${tiempoVuelo.toFixed(2)} s\n`;
+  txt+=`   Altura máxima numérica      ≈ ${alturaMax.toFixed(2)} m\n`;
+  txt+=`   Alcance horizontal numérico ≈ ${alcance.toFixed(2)} m\n\n`;
+
+  txt+="4) Energía cinética (Ec), potencial (Ep) y mecánica (Et)\n";
+  txt+="   Ec = ½ m v²,  Ep = m g h\n\n";
+  txt+="   a) Fin del empuje\n";
+  txt+=`      t ≈ ${eEmp.t.toFixed(2)} s,  h ≈ ${eEmp.h.toFixed(2)} m\n`;
+  txt+=`      Ec ≈ ${eEmp.Ec.toFixed(2)} J, Ep ≈ ${eEmp.Ep.toFixed(2)} J, Et ≈ ${eEmp.Et.toFixed(2)} J\n\n`;
+  txt+="   b) Altura máxima\n";
+  txt+=`      t ≈ ${eCima.t.toFixed(2)} s,  h ≈ ${eCima.h.toFixed(2)} m\n`;
+  txt+=`      Ec ≈ ${eCima.Ec.toFixed(2)} J, Ep ≈ ${eCima.Ep.toFixed(2)} J, Et ≈ ${eCima.Et.toFixed(2)} J\n\n`;
+  txt+="   c) Justo antes de tocar el suelo\n";
+  txt+=`      t ≈ ${eSuelo.t.toFixed(2)} s,  h ≈ ${eSuelo.h.toFixed(2)} m\n`;
+  txt+=`      Ec ≈ ${eSuelo.Ec.toFixed(2)} J, Ep ≈ ${eSuelo.Ep.toFixed(2)} J, Et ≈ ${eSuelo.Et.toFixed(2)} J\n\n`;
+  txt+="En la fase de empuje la energía mecánica Et aumenta\n";
+  txt+="por el trabajo del aire comprimido sobre el cohete.\n";
+  txt+="En el vuelo libre, Ec (roja) y Ep (azul) se transforman,\n";
+  txt+="pero Et (negra) se mantiene casi constante.\n";
+
+  datosDiv.textContent=txt;
+
+  dibujarEjesEnergia();
+  iniciarAnimacion();
+
+  btnRestart.addEventListener("click",iniciarAnimacion);
+
+  window.addEventListener("resize",()=>{
+    const w=sceneDiv.clientWidth;
+    const h=sceneDiv.clientHeight;
+    renderer.setSize(w,h);
+    camera.aspect=w/h;
+    camera.updateProjectionMatrix();
+  });
+
+})();  
+</script>
+</body>
+</html>
+
