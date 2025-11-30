@@ -39,6 +39,7 @@
     box-shadow:0 18px 38px rgba(15,23,42,0.7);
   }
 
+  /* ======= TOP BAR ======= */
   #top-bar{
     display:flex;
     justify-content:space-between;
@@ -57,6 +58,12 @@
     font-weight:500;
   }
 
+  #botonera{
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+  }
+
   .btn{
     background:var(--naranja);
     color:white;
@@ -69,11 +76,27 @@
     box-shadow:0 7px 16px rgba(249,115,22,0.55);
     letter-spacing:0.03em;
     transition:transform 0.08s ease,box-shadow 0.08s ease,background 0.15s;
+    text-decoration:none;
+    display:inline-flex;
+    align-items:center;
+    gap:4px;
   }
   .btn:hover{
     transform:translateY(-1px);
     box-shadow:0 12px 24px rgba(15,23,42,0.65);
     background:#ea580c;
+  }
+
+  /* botón secundario (pantalla completa / nueva pestaña) */
+  .btn-sec{
+    background:#0f172a;
+    color:#e5e7eb;
+    box-shadow:0 6px 14px rgba(15,23,42,0.65);
+    font-size:12px;
+    padding:7px 14px;
+  }
+  .btn-sec:hover{
+    background:#1e293b;
   }
 
   h1{
@@ -294,7 +317,6 @@
     text-shadow:0 1px 2px rgba(255,255,255,0.7);
   }
 
-  /* Peso (roja, hacia abajo) */
   .arrow-peso{
     left:50%;
     transform:translateX(-50%);
@@ -316,7 +338,6 @@
     color:var(--rojo);
   }
 
-  /* Empuje (verde, inclinado) */
   .arrow-empuje{
     height:72px;
     width:3px;
@@ -339,7 +360,6 @@
     color:var(--verde);
   }
 
-  /* Normal (gris, hacia arriba) */
   .arrow-normal{
     left:50%;
     transform:translateX(-50%);
@@ -360,8 +380,30 @@
     color:#6b7280;
   }
 
+  /* sección de explicación final */
+  #descripcion{
+    margin-top:20px;
+    padding:14px 16px 10px 16px;
+    border-radius:14px;
+    border:1px dashed #cbd5f5;
+    background:linear-gradient(to right,#eff6ff,#f9fafb);
+    font-size:13px;
+    color:#4b5563;
+  }
+  #descripcion h2{
+    margin-top:0;
+    margin-bottom:8px;
+    font-size:18px;
+    color:#0f172a;
+  }
+  #descripcion ul{
+    margin-top:6px;
+    padding-left:20px;
+  }
+
   @media (max-width:800px){
     #sceneWrapper{height:320px;}
+    #top-bar{flex-direction:column;align-items:flex-start;}
   }
 </style>
 </head>
@@ -369,7 +411,13 @@
 <div id="contenedor">
   <div id="top-bar">
     <div id="badge">Caso 2 · Cohete de botella (600 mL)</div>
-    <button id="btnRestart" class="btn">⟳ Reiniciar simulación</button>
+
+    <!-- NUEVA BOTONERA -->
+    <div id="botonera">
+      <button id="btnRestart" class="btn">⟳ Reiniciar simulación</button>
+      <button id="btnFullscreen" class="btn btn-sec">⛶ Pantalla completa</button>
+      <a href="https://gabrielladelacruz14-ctrl.github.io/cohete-simulacion/" target="_blank" class="btn btn-sec">↗ Abrir en nueva pestaña</a>
+    </div>
   </div>
 
   <h1>Simulación de cohete de botella (Empuje + vuelo libre)</h1>
@@ -434,6 +482,26 @@
       </ul>
     </div>
   </div>
+
+  <!-- NUEVA EXPLICACIÓN FINAL PARA TU INFORME -->
+  <section id="descripcion">
+    <h2>¿Qué muestra esta simulación?</h2>
+    <p>
+      El experimento representa el lanzamiento de un cohete de botella de 600 mL con una fase de
+      <b>empuje</b> muy corta (≈ 0,20 s) y luego una fase de <b>vuelo libre</b> que se comporta como
+      <b>tiro parabólico</b>.
+    </p>
+    <ul>
+      <li><b>Parte superior:</b> trayectoria 3D del cohete, con humo y chorro de agua durante el empuje.</li>
+      <li><b>Gráfica inferior:</b> evolución de <b>Ec</b>, <b>Ep</b>, <b>Et</b>, velocidad y altura en función del tiempo.</li>
+      <li><b>Texto a la derecha:</b> resume los datos numéricos clave para comprobar las ecuaciones de MRUV.</li>
+      <li><b>DCL:</b> deja claro qué fuerzas actúan en cada fase, conectando la simulación con el análisis de fuerzas.</li>
+    </ul>
+    <p>
+      Así puedes usar el modelo tanto para explicar la teoría de MRUV y conservación de la energía,
+      como para comparar los resultados <i>teóricos</i> (fórmulas) con los resultados de la <i>simulación</i>.
+    </p>
+  </section>
 
   <audio id="sonido" src="cohete.mp3" preload="auto"></audio>
 </div>
@@ -672,7 +740,7 @@
   rocket.castShadow=true;
   scene.add(rocket);
 
-  // Chorro de agua (fase de empuje)
+  // Chorro
   const jet=new THREE.Mesh(
     new THREE.CylinderGeometry(0.05,0.16,1.4,24),
     new THREE.MeshPhongMaterial({
@@ -709,7 +777,6 @@
   function crearHumo(x,yVis,z){
     const puff = new THREE.Group();
     const baseSize = 0.10 + Math.random()*0.05;
-
     for(let i=0;i<5;i++){
       const geo = new THREE.SphereGeometry(
         baseSize*(0.8+Math.random()*0.7),
@@ -728,7 +795,6 @@
       );
       puff.add(s);
     }
-
     puff.position.set(
       x-0.35,
       Math.max(0.0,yVis-0.10),
@@ -744,15 +810,12 @@
       const puff = smokePuffs[i];
       puff.userData.life += dtSim;
       const L = puff.userData.life;
-
       puff.position.y += 0.10*dtSim;
       const scale = 1 + 1.2*L;
       puff.scale.set(scale,scale,scale);
-
       puff.children.forEach(mesh=>{
         mesh.material.opacity = Math.max(0, 0.40 - 0.35*L);
       });
-
       if(L > 1.0){
         scene.remove(puff);
         smokePuffs.splice(i,1);
@@ -909,9 +972,12 @@
   // ==========================
   const audio=document.getElementById("sonido");
   const btnRestart=document.getElementById("btnRestart");
+  const btnFullscreen=document.getElementById("btnFullscreen");
+
   let animId=null,startTime=null;
   const durAnim=30000;
   let lastIdx=0;
+  let tGlobal=0; // para brillo del cohete
 
   function step(timestamp){
     if(!startTime)startTime=timestamp;
@@ -929,22 +995,22 @@
 
     const dtSim = Math.max(0, tArr[idx]-tArr[lastIdx]);
     lastIdx=idx;
+    tGlobal += dtSim;
 
-    // Altura visual (para que no atraviese el suelo)
     const yVis = Math.max(0,y) + 0.10;
-
     rocket.position.set(x,yVis,z);
 
-    // Orientación: durante el vuelo se orienta según v; cerca del suelo se "endereza"
     let visAngle;
     if(!enEmpuje && y < 0.25){
-      visAngle = 0; // paralelo al suelo para un aterrizaje suave
+      visAngle = 0;
     }else{
       visAngle = Math.atan2(vy,vx);
     }
     rocket.rotation.z = -visAngle+Math.PI/2;
 
-    // Agua interior
+    // efecto extra: brillo pulsante en la punta
+    nose.material.emissiveIntensity = 0.45 + 0.25*Math.sin(3*tGlobal);
+
     if(enEmpuje){
       const frac=1-tNow/tEmp;
       const scaleY=Math.max(0.10,frac);
@@ -955,7 +1021,6 @@
       water.position.y=0.12;
     }
 
-    // Chorro, gotas y humo: solo en empuje (0 ≤ t ≤ 0.20 s)
     if(enEmpuje){
       jet.visible=true;
       drops.visible=true;
@@ -971,7 +1036,6 @@
 
     actualizarHumo(dtSim);
 
-    // Fuerzas
     arrowWeight.position.set(0,0,0);
     arrowWeight.setDirection(new THREE.Vector3(0,-1,0));
     arrowWeight.setLength(1.2);
@@ -996,7 +1060,6 @@
       arrowNormal.visible=false;
     }
 
-    // HUD
     const faseTxt = enEmpuje
       ? `<span class="tag tag-empuje">Empuje (0 ≤ t ≤ 0.20 s)</span> `+
         `<b>MRUV con a = a_emp = 60 m/s²</b>. Agua expulsada hacia atrás `+
@@ -1016,7 +1079,6 @@
 
     dibujarSeries(idx);
 
-    // Cámara: órbita suave para ver todas las dimensiones
     const camBaseAng = 0.6 + 0.5*Math.sin(alpha*Math.PI);
     const rad    = 16;
     const jitter = 0.12*Math.sin(timestamp*0.002);
@@ -1044,6 +1106,7 @@
     if(animId!==null)cancelAnimationFrame(animId);
     startTime=null;
     lastIdx=0;
+    tGlobal=0;
     dibujarEjesEnergia();
     animId=requestAnimationFrame(step);
   }
@@ -1122,10 +1185,33 @@
 
   datosDiv.textContent=txt;
 
+  // ====== INICIAR Y BOTONES ======
   dibujarEjesEnergia();
   iniciarAnimacion();
 
   btnRestart.addEventListener("click",iniciarAnimacion);
+
+  // Pantalla completa
+  function toggleFullscreen(){
+    if(!document.fullscreenElement){
+      if(document.documentElement.requestFullscreen){
+        document.documentElement.requestFullscreen();
+      }
+    }else{
+      if(document.exitFullscreen){
+        document.exitFullscreen();
+      }
+    }
+  }
+  btnFullscreen.addEventListener("click",toggleFullscreen);
+
+  document.addEventListener("fullscreenchange",()=>{
+    if(document.fullscreenElement){
+      btnFullscreen.textContent = "⛶ Salir de pantalla completa";
+    }else{
+      btnFullscreen.textContent = "⛶ Pantalla completa";
+    }
+  });
 
   window.addEventListener("resize",()=>{
     const w=sceneDiv.clientWidth;
@@ -1139,5 +1225,7 @@
 </script>
 </body>
 </html>
+
+
 
 
